@@ -6,15 +6,12 @@
  * LLM 可调用的工具：
  *   - read_file:   读取文件内容（OpenClaw 懒加载 SKILL.md 的核心工具）
  *   - get_time:    获取当前时间
- *   - read_state:  读取状态（Skill 间数据共享）
- *   - write_state: 写入状态（持久化数据）
  */
 
 import { readFileSync } from "node:fs";
 import type { ToolDefinition } from "./types.js";
-import type { StateStore } from "./state.js";
 
-export function createTools(state: StateStore): ToolDefinition[] {
+export function createTools(): ToolDefinition[] {
   return [
     {
       name: "read_file",
@@ -37,32 +34,6 @@ export function createTools(state: StateStore): ToolDefinition[] {
       description: "获取当前的日期和时间（ISO 格式）",
       input_schema: { type: "object", properties: {}, required: [] },
       handler: async () => new Date().toISOString(),
-    },
-    {
-      name: "read_state",
-      description: "通过 key 从状态存储中读取数据",
-      input_schema: {
-        type: "object",
-        properties: { key: { type: "string", description: "要读取的状态键名" } },
-        required: ["key"],
-      },
-      handler: async (input) => JSON.stringify(state.read(input.key as string)),
-    },
-    {
-      name: "write_state",
-      description: "向状态存储中写入数据",
-      input_schema: {
-        type: "object",
-        properties: {
-          key: { type: "string", description: "状态键名" },
-          value: { description: "要存储的值（任意 JSON 可序列化类型）" },
-        },
-        required: ["key", "value"],
-      },
-      handler: async (input) => {
-        state.write(input.key as string, input.value);
-        return `状态 "${input.key}" 写入成功`;
-      },
     },
   ];
 }

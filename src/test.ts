@@ -9,7 +9,6 @@ import { discoverSkills } from "./registry.js";
 import { listSkills } from "./trigger.js";
 import { buildSystemPrompt } from "./prompt.js";
 import { createTools } from "./tools.js";
-import { createStateStore } from "./state.js";
 import { createExecutor } from "./executor.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -23,9 +22,8 @@ async function test() {
   console.log(listSkills(registry));
   console.log(`\n✅ 阶段 1：发现了 ${registry.size} 个 Skill\n`);
 
-  // 阶段 2：初始化
-  const state = createStateStore();
-  const tools = createTools(state);
+  // 阶段 2：工具与执行器
+  const tools = createTools();
 
   // 阶段 3：构建含所有技能列表的 System Prompt（整个会话复用）
   const allSkills = [...registry.values()];
@@ -51,11 +49,10 @@ async function test() {
   console.log(`  输入：${input2.slice(0, 60)}...`);
   const result2 = await executor.execute(systemPrompt, input2);
   console.log(`  结果：${result2}`);
-  console.log(`  状态存储：${JSON.stringify(state.read("last_summary")).slice(0, 80)}...`);
   console.log();
 
-  // ─── 测试 3：research（AI 先调 skill_research，内部再调 skill_summarize）
-  console.log("─── 测试 3：research 技能（链式调用）───");
+  // ─── 测试 3：research（同一条回复内先摘要再分析）
+  console.log("─── 测试 3：research 技能 ───");
   const input3 = "帮我深度分析：深度学习在自然语言处理领域的应用越来越广泛，特别是大语言模型";
   console.log(`  输入：${input3.slice(0, 60)}...`);
   const result3 = await executor.execute(systemPrompt, input3);

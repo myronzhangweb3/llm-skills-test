@@ -1,7 +1,7 @@
 {
   "tool_name": "WebFetch",
-  "tool_input_preview": "{\"url\":\"https://aimlapi.com/blog/openclaw-masterclass\",\"prompt\":\"解释 OpenClaw 的 skill 系统内部实现：formatSkillsForPrompt 函数如何工作，skills 如何注入 system prompt，LLM 如何识别和激活 skill。要有代码细节。\"}",
-  "error": "Unable to verify if domain aimlapi.com is safe to fetch. This may be due to network restrictions or enterprise security policies blocking claude.ai.",
-  "timestamp": "2026-03-22T08:50:25.920Z",
-  "retry_count": 4
+  "tool_input_preview": "{\"url\":\"https://github.com/openclaw/openclaw\",\"prompt\":\"找到 skill 相关的源码文件路径，特别是处理 XML 注入、懒加载、formatSkillsForPrompt 等函数的文件\"}",
+  "error": "Unable to verify if domain github.com is safe to fetch. This may be due to network restrictions or enterprise security policies blocking claude.ai.",
+  "timestamp": "2026-03-22T09:36:29.762Z",
+  "retry_count": 1
 }

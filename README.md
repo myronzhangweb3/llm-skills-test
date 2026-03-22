@@ -1,69 +1,74 @@
-# LLM Skill System MVP
+# LLM Skill System — OpenClaw 方案
 
-> 通过阅读源码理解 LLM Skill 的完整生命周期。以 [oh-my-claudecode](https://github.com/nicekid1/oh-my-claudecode) 为蓝本的最小化实现。
+> 通过阅读源码理解 LLM Skill 的 OpenClaw 实现方案：XML 注入 + 懒加载。
 
-## 什么是 Skill？
+## 什么是 OpenClaw 方案？
 
-**Skill 就是一段被动态注入到 LLM System Prompt 中的指令文本。** 没有魔法，没有特殊协议。当用户输入触发了某个 Skill，系统把 Skill 的 prompt 模板拼接到 system prompt 里，LLM 读到这段指令后就会按要求行动。
+**Skill = 注入 system prompt 的 XML 条目 + 按需懒加载的指令文件。**
+
+传统方案（如 OMC）依赖关键词匹配预选 Skill，然后将单个 Skill 的 prompt 注入到对话中。
+
+OpenClaw 方案完全不同：
+
+1. 启动时将所有 Skill 以**紧凑 XML 格式**注入 system prompt（仅 name/description/location，不含完整指令）
+2. 每轮对话，LLM **自主扫描** `<available_skills>` 列表，根据语义判断是否需要某个 Skill
+3. 若需要，LLM 调用 `read_file` 工具**按需读取** SKILL.md 的完整指令
+4. LLM 直接按 SKILL.md 的指令执行（无子 LLM 调用，无工具包装）
 
 ## 架构图
 
 ```
-用户输入 "hello there"
+启动时（一次性）：
+  discoverSkills() → buildSystemPrompt() → XML 注入 system prompt
+  createTools()    → [read_file, get_time]
+
+每轮对话：
+用户输入
     │
     ▼
-┌──────────┐     ┌──────────┐     ┌──────────┐
-│ trigger   │────>│  prompt   │────>│ executor │
-│ 触发匹配  │     │ Prompt拼接│     │ LLM执行  │
-│           │     │           │     │ +工具循环 │
-└──────────┘     └──────────┘     └────┬─────┘
-    ▲                                   │
-    │                                   ▼
-┌──────────┐                      ┌──────────┐
-│ registry  │◄─────────────────────│  tools   │
-│ Skill注册 │   invoke_skill       │ 工具系统  │
-└──────────┘   (递归重入)          └────┬─────┘
-                                       │
-                                  ┌────▼─────┐
-                                  │  state   │
-                                  │ 状态存储  │
-                                  └──────────┘
+┌─────────────────────────────────────┐
+│  LLM（携带完整 system prompt）       │
+│  扫描 <available_skills> XML 列表   │
+│  自主决定：需要 skill？              │
+└───────────┬─────────────────────────┘
+            │ 需要                    │ 不需要
+            ▼                         ▼
+    调用 read_file              直接生成回复
+    读取 SKILL.md
+            │
+            ▼
+    按 SKILL.md 指令执行
+    （可调用 get_time 等工具）
+            │
+            ▼
+      生成最终回复
 ```
 
-## 8 个生命周期阶段
+## 文件结构
 
-| 阶段 | 文件 | 一句话解释 |
-|------|------|-----------|
-| 1. Skill 定义 | `skills/*/SKILL.md` | YAML 元数据 + Markdown prompt 模板 |
-| 2. Skill 发现 | `src/registry.ts` | 扫描目录 → 解析 frontmatter → 构建 Map |
-| 3. 触发匹配 | `src/trigger.ts` | 清洗输入 → 关键词匹配 → 优先级排序 |
-| 4. Prompt 拼接 | `src/prompt.ts` | 将 Skill 模板包裹在标签中注入 system prompt |
-| 5. LLM 执行 | `src/executor.ts` | API 调用 → 检查 tool_use → 执行 → 循环 |
-| 6. 工具调用 | `src/tools.ts` | get_time / read_state / write_state / invoke_skill |
-| 7. 状态管理 | `src/state.ts` | 内存 Map + JSON 文件持久化 |
-| 8. 链式调用 | `src/tools.ts` | invoke_skill 递归重入同一条执行路径 |
+| 文件 | 说明 |
+|------|------|
+| [`src/types.ts`](https://github.com/myronzhangweb3/llm-skills-test/blob/main/src/types.ts) | 数据模型，`SkillDefinition.filePath` 是懒加载的关键字段 |
+| [`src/registry.ts`](https://github.com/myronzhangweb3/llm-skills-test/blob/main/src/registry.ts) | 扫描 `skills/` 目录，解析 frontmatter，保存文件路径 |
+| [`src/prompt.ts`](https://github.com/myronzhangweb3/llm-skills-test/blob/main/src/prompt.ts) | 🔑 核心：生成 XML 技能列表，注入 system prompt + 强制扫描指令 |
+| [`src/tools.ts`](https://github.com/myronzhangweb3/llm-skills-test/blob/main/src/tools.ts) | LLM 可调用工具：`read_file` / `get_time` |
+| [`src/executor.ts`](https://github.com/myronzhangweb3/llm-skills-test/blob/main/src/executor.ts) | Agentic Loop：API 调用 → tool_calls → 循环，无 skill 工具包装 |
+| [`src/index.ts`](https://github.com/myronzhangweb3/llm-skills-test/blob/main/src/index.ts) | REPL 入口，串联完整流程 |
+| [`skills/greet/SKILL.md`](https://github.com/myronzhangweb3/llm-skills-test/blob/main/skills/greet/SKILL.md) | 问候技能，调用 `get_time` 报告当前时段 |
+| [`skills/summarize/SKILL.md`](https://github.com/myronzhangweb3/llm-skills-test/blob/main/skills/summarize/SKILL.md) | 摘要技能 |
+| [`skills/research/SKILL.md`](https://github.com/myronzhangweb3/llm-skills-test/blob/main/skills/research/SKILL.md) | 研究技能：同一条回复内先摘要再深度分析 |
 
 ## 推荐阅读顺序
 
-```
-types.ts          → 理解数据模型（Skill/Tool/Message 长什么样）
-  ↓
-skills/greet/     → 理解 Skill 文件格式（YAML + Markdown）
-  ↓
-registry.ts       → 理解系统如何发现和加载 Skill
-  ↓
-trigger.ts        → 理解用户输入如何匹配到 Skill
-  ↓
-prompt.ts         → 🔑 理解核心机制：Skill = 动态注入的 prompt
-  ↓
-tools.ts          → 理解 LLM 可调用的工具，尤其是 invoke_skill
-  ↓
-state.ts          → 理解 Skill 间如何通过状态共享数据
-  ↓
-executor.ts       → 理解 Agentic Loop（发送→工具调用→循环）
-  ↓
-index.ts          → 看完整流程如何串联在一起
-```
+| 步骤 | 文件 | 关注点 |
+|------|------|--------|
+| 1 | [`src/types.ts`](https://github.com/myronzhangweb3/llm-skills-test/blob/main/src/types.ts) | `SkillDefinition.filePath` 字段 |
+| 2 | [`skills/greet/SKILL.md`](https://github.com/myronzhangweb3/llm-skills-test/blob/main/skills/greet/SKILL.md) | SKILL.md 格式：frontmatter + Markdown 指令 |
+| 3 | [`src/registry.ts`](https://github.com/myronzhangweb3/llm-skills-test/blob/main/src/registry.ts) | `parseSkillFile` 保存 `filePath` |
+| 4 | [`src/prompt.ts`](https://github.com/myronzhangweb3/llm-skills-test/blob/main/src/prompt.ts) | 🔑 XML 注入 + 强制扫描指令 |
+| 5 | [`src/tools.ts`](https://github.com/myronzhangweb3/llm-skills-test/blob/main/src/tools.ts) | `read_file` 工具：懒加载的执行者 |
+| 6 | [`src/executor.ts`](https://github.com/myronzhangweb3/llm-skills-test/blob/main/src/executor.ts) | Agentic Loop，无 skill 工具包装 |
+| 7 | [`src/index.ts`](https://github.com/myronzhangweb3/llm-skills-test/blob/main/src/index.ts) | 完整流程串联 |
 
 ## 运行
 
@@ -71,68 +76,66 @@ index.ts          → 看完整流程如何串联在一起
 # 安装依赖
 npm install
 
-# Mock 模式（不需要 API key，模拟工具调用流程）
+# Mock 模式（不需要 API key）
 npm run dev
 
-# OpenAI 模式
-OPENAI_API_KEY=sk-xxx npm run dev
+# OpenAI 兼容 API
+OPENAI_API_KEY=sk-xxx OPENAI_BASE_URL=https://api.openai.com/v1 OPENAI_MODEL=gpt-4o npm run dev
 
-# 自定义 baseURL（对接 DeepSeek、Ollama、vLLM 等兼容服务）
+# 自定义服务（DeepSeek、Ollama 等）
 OPENAI_API_KEY=sk-xxx OPENAI_BASE_URL=https://api.deepseek.com/v1 OPENAI_MODEL=deepseek-chat npm run dev
 
 # Ollama 本地模型（无需 API key）
 OPENAI_BASE_URL=http://localhost:11434/v1 OPENAI_MODEL=qwen2.5 npm run dev
 ```
 
-**环境变量说明：**
+**环境变量：**
 
 | 变量 | 必填 | 说明 |
 |------|------|------|
 | `OPENAI_API_KEY` | 否 | API 密钥，不设则进入 Mock 模式 |
-| `OPENAI_BASE_URL` | 否 | 自定义 API 地址，不设则用 OpenAI 默认 |
+| `OPENAI_BASE_URL` | 否 | 自定义 API 地址 |
 | `OPENAI_MODEL` | 否 | 模型名称，默认 `gpt-4o-mini` |
 
 ## 示例交互
 
 ```
-You> hello
-  ⚡ 触发 Skill: greet (关键词: "hello")
-  🔧 Tool: get_time() → 2026-03-22T10:30:00.000Z
+你> 你好
+  📤 [第 0 轮] LLM 扫描 available_skills XML 列表
+  📥 LLM 调用 read_file → skills/greet/SKILL.md
+  📤 [第 1 轮] LLM 读取到 greet 指令，调用 get_time
+  📥 get_time() → 2026-03-22T09:27:00.000Z
+  📤 [第 2 轮] LLM 生成最终回复
 
-Assistant> Good morning! It's 10:30 AM — hope you're having a great day!
+助手> 早上好！现在是 9:27，希望你今天有个美好的开始！
 
-You> summarize 这是一段关于人工智能的文本...
-  ⚡ 触发 Skill: summarize (关键词: "summarize")
-  🔧 Tool: write_state("last_summary", ...) → 已保存
+你> 帮我总结：人工智能正在改变软件开发...
+  📤 LLM 扫描列表，匹配 summarize skill
+  📥 read_file → skills/summarize/SKILL.md
 
-Assistant> 摘要: ...（已保存到 state）
+助手> 摘要：...
 
-You> research 这是一段关于人工智能的文本...
-  ⚡ 触发 Skill: research (关键词: "research")
-  🔗 链式调用: invoke_skill("summarize", ...)
-  🔧 Tool: read_state("last_summary") → {...}
+你> 帮我深度分析：深度学习在 NLP 的应用...
+  📤 LLM 匹配 research skill
+  📥 read_file → skills/research/SKILL.md
+  （同一条回复内先写短摘要，再写主题、情绪与追问）
 
-Assistant> 研究分析完成: ...
+助手> 研究分析完成：摘要 + 深度分析 + 后续问题
 ```
 
-## 与 OMC 真实实现的对照
+## 与传统方案对比
 
-每个源文件头部都标注了在 OMC 中的对应实现位置。关键对照：
-
-| 本项目 | OMC 真实实现 |
-|--------|-------------|
-| `registry.ts` | `skill-injector.mjs` + `src/features/builtin-skills/skills.ts` |
-| `trigger.ts` | `hooks/keyword-detector/index.ts` |
-| `prompt.ts` | `skill-injector.mjs`（注入 `<system-reminder>` 标签） |
-| `executor.ts` | Claude Code CLI 主循环 |
-| `tools.ts` | MCP Server + Built-in Tools |
-| `state.ts` | `state_read` / `state_write` MCP tools |
+| | 传统方案（OMC） | OpenClaw 方案（本项目）|
+|--|--|--|
+| Skill 路由 | 关键词匹配 | LLM 语义判断 |
+| Skill 加载 | 预先注入完整 prompt | 按需 read_file 懒加载 |
+| Skill 执行 | 子 LLM 调用 | LLM 直接执行指令 |
+| System prompt | 每轮动态拼接 | 启动时一次性构建 |
+| 新增 Skill | 需重启重新匹配 | 放入目录自动发现 |
 
 ## 练习
 
-读完代码后，试试这些练习来验证你的理解：
-
-1. **新增 Skill**: 创建 `skills/translate/SKILL.md`，让它翻译用户输入的文本
-2. **新增工具**: 在 `tools.ts` 中添加一个 `word_count` 工具
-3. **优先级排序**: 修改 `trigger.ts`，实现类似 OMC 的硬编码优先级而非位置排序
-4. **Hook 系统**: 仿照 OMC，将 trigger 检测从同步调用改为 hook 事件驱动
+1. **新增 Skill**：创建 `skills/translate/SKILL.md`，让 LLM 翻译用户输入的文本
+2. **新增工具**：在 `tools.ts` 中添加 `web_search` 工具，让 research skill 能联网搜索
+3. **Skill 描述优化**：修改 SKILL.md 中的 `description` 字段，观察 LLM 触发准确率的变化
+4. **链式调用**：仿照 research skill，创建一个调用多个其他 Skill 的复合 Skill

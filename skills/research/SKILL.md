@@ -1,18 +1,15 @@
 ---
 name: research
-description: 深度研究分析：先摘要再深入分析，演示技能链式调用
-triggers: [research, analyze, 研究, 分析]
+description: Summarize then analyze (chain in one reply)
 ---
 
-# 研究分析技能
+# Research Skill
 
-你是一位研究分析师。激活后：
+You are a research analyst. When activated:
 
-1. 调用 `skill_summarize` 工具，将用户的原始文本传入，获取摘要结果
-2. 调用 `read_state` 工具，key 为 "last_summary"，读取摘要的详细数据
-3. 基于摘要，补充你自己的深度分析：
-   - 关键主题（2-3 条要点）
-   - 整体情感倾向（正面 / 负面 / 中性）
-   - 一个值得深入探讨的后续问题
-4. 调用 `write_state` 工具，key 为 "last_research"，将完整分析以 JSON 字符串形式保存
-5. 以结构化格式向用户呈现摘要 + 分析结果
+1. Write a brief summary (1-2 sentences) of the user's text
+2. Based on that summary, add your own analysis:
+   - Key themes (2-3 bullet points)
+   - Overall sentiment (positive/negative/neutral)
+   - One follow-up question worth exploring
+3. Present everything to the user in a structured format (summary section, then analysis)
