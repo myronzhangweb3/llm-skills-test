@@ -1,0 +1,8 @@
+{"t":0,"agent":"a94deee","agent_type":"unknown","event":"agent_stop","success":true}
+{"t":0,"agent":"a10d342","agent_type":"unknown","event":"agent_stop","success":true}
+{"t":0,"agent":"system","event":"keyword_detected","keyword":"deep-interview"}
+{"t":0,"agent":"aaa2761","agent_type":"explore","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"aaa2761","agent_type":"explore","event":"agent_stop","success":true,"duration_ms":89013}
+{"t":0,"agent":"a947c9a","agent_type":"unknown","event":"agent_stop","success":true}
+{"t":0,"agent":"a690348","agent_type":"unknown","event":"agent_stop","success":true}
+{"t":0,"agent":"afb351e","agent_type":"unknown","event":"agent_stop","success":true}

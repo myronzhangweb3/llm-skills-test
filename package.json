@@ -1,0 +1,19 @@
+{
+  "name": "llm-skill-system-mvp",
+  "version": "1.0.0",
+  "description": "最小化 LLM Skill 系统 — 通过阅读源码理解 Skill 完整生命周期",
+  "type": "module",
+  "scripts": {
+    "dev": "npx tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "openai": "^4.73.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "tsx": "^4.19.0",
+    "@types/node": "^22.0.0"
+  }
+}
