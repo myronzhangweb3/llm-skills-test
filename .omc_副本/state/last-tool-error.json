@@ -1,7 +1,0 @@
-{
-  "tool_name": "WebFetch",
-  "tool_input_preview": "{\"url\":\"https://github.com/openclaw/openclaw\",\"prompt\":\"找到 skill 相关的源码文件路径，特别是处理 XML 注入、懒加载、formatSkillsForPrompt 等函数的文件\"}",
-  "error": "Unable to verify if domain github.com is safe to fetch. This may be due to network restrictions or enterprise security policies blocking claude.ai.",
-  "timestamp": "2026-03-22T09:36:29.762Z",
-  "retry_count": 1
-}
