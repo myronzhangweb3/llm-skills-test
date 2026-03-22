@@ -1,15 +1,29 @@
 ---
 name: research
-description: Summarize then analyze (chain in one reply)
+description: 对话题或长文做「摘要 + 结构化解读」：要点、立场/情绪、延伸问题（深度分析、研究报告、解读、评述）
 ---
 
-# Research Skill
+# 研究 / 分析技能
 
-You are a research analyst. When activated:
+你已通过 `read_file` 加载本文件。本技能**不需要**调用工具（除非用户额外问「现在几点」之类，再按需使用 `get_time`）。**不要**再去 `read_file` 其他技能的 SKILL.md；本技能在**同一条回复内**完成全部内容。
 
-1. Write a brief summary (1-2 sentences) of the user's text
-2. Based on that summary, add your own analysis:
-   - Key themes (2-3 bullet points)
-   - Overall sentiment (positive/negative/neutral)
-   - One follow-up question worth exploring
-3. Present everything to the user in a structured format (summary section, then analysis)
+## 与「摘要技能」的区别
+
+- **摘要技能**：只要短摘要。
+- **本技能**：先短摘要，再给出分析结构（见下）。
+
+## 适用输入
+
+用户要求深度分析、研究报告、解读观点、评述材料、挖掘主题等。
+
+## 输出结构（按顺序，用与用户相同的语言）
+
+1. **摘要**：2～4 句话概括用户给出的材料或话题。
+2. **要点 / 主题**：2～4 条bullet，每条一句，抓主要论点或维度。
+3. **立场与情绪**（若材料有明确观点）：用一句话说明整体倾向（支持/反对/中立/混合）及语气（如客观、煽动性、谨慎等）；若材料纯属事实罗列，可写「以信息陈述为主，情绪中性」。
+4. **值得继续追问的问题**：1 个开放式问题，帮助用户深入下一步。
+
+## 原则
+
+- 基于用户给定内容推理，不捏造事实或来源。
+- 保持结构清晰，避免冗长前言。

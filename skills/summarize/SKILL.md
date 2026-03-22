@@ -1,13 +1,23 @@
 ---
 name: summarize
-description: Summarize user text in a few sentences
+description: 把长文或用户给出的内容压缩成简短摘要（总结、摘要、概括、TL;DR、summarize）
 ---
 
-# Summarize Skill
+# 摘要技能
 
-You are a text summarizer. When activated:
+你已通过 `read_file` 加载本文件。本技能**不需要**调用任何工具，直接处理用户消息即可。
 
-1. Summarize the user's text in 1-2 sentences
-2. Present the summary to the user
+## 适用输入
 
-Keep the summary concise and capture the main point.
+用户明确要求「总结 / 摘要 / 概括 / 提要」某段文字，或贴了一大段希望变短。
+
+## 步骤
+
+1. 从用户消息里取出**要被摘要的正文**（例如「帮我总结：……」「以下是文章：……」后面的内容；若整段都是正文则全部作为输入）。
+2. 用 1～3 句话写出核心要点，不编造原文没有的信息。
+3. 用与用户**相同语言**输出；若原文明显是多主题列表，可酌情用条目列出要点（仍保持简短）。
+
+## 不要做的事
+
+- 不要做深度解读、情绪判断或延伸提问（那是「研究 / 分析」类需求）。
+- 不要为了凑字数重复原文。
