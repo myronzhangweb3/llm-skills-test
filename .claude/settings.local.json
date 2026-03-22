@@ -29,7 +29,8 @@
       "Bash(curl -s \"https://api.github.com/repos/openclaw/openclaw/contents/src\" 2>&1 | python3 -c \"import json,sys; [print\\(f['name'], f['type']\\) for f in json.load\\(sys.stdin\\)]\" 2>&1)",
       "Bash(curl -s \"https://raw.githubusercontent.com/openclaw/openclaw/main/src/skills.ts\" | grep -n \"formatSkills\\\\|buildWorkspace\\\\|available_skills\\\\|read_file\\\\|location\\\\|<skill\\\\|XML\\\\|compact\\\\|lazy\\\\|resolveSkills\" | head -40)",
       "Bash(curl -s \"https://raw.githubusercontent.com/openclaw/openclaw/main/src/skills.ts\" | head -100)",
-      "Bash(curl -s \"https://api.github.com/repos/openclaw/openclaw\" | python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('private:', d.get\\('private'\\)\\); print\\('default_branch:', d.get\\('default_branch'\\)\\); print\\('message:', d.get\\('message',''\\)\\)\" 2>&1)"
+      "Bash(curl -s \"https://api.github.com/repos/openclaw/openclaw\" | python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('private:', d.get\\('private'\\)\\); print\\('default_branch:', d.get\\('default_branch'\\)\\); print\\('message:', d.get\\('message',''\\)\\)\" 2>&1)",
+      "Bash(curl -s \"https://api.github.com/repos/openclaw/openclaw/tags\" | python3 -c \"import json,sys; tags=json.load\\(sys.stdin\\); [print\\(t['name']\\) for t in tags[:5]]\" 2>&1)"
     ]
   }
 }

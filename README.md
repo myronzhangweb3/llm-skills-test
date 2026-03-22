@@ -2,7 +2,7 @@
 
 > 通过阅读源码理解 LLM Skill 的 OpenClaw 实现方案：XML 注入 + 懒加载。
 >
-> 参考 OpenClaw 真实源码：[`src/agents/skills/workspace.ts`](https://github.com/openclaw/openclaw/blob/main/src/agents/skills/workspace.ts)（`buildWorkspaceSkillsPrompt` + `compactSkillPaths`）、[`src/agents/skills/frontmatter.ts`](https://github.com/openclaw/openclaw/blob/main/src/agents/skills/frontmatter.ts)（SKILL.md 解析）
+> 参考 OpenClaw 真实源码：[`src/agents/skills/workspace.ts`](https://github.com/openclaw/openclaw/blob/v2026.3.13-1/src/agents/skills/workspace.ts)（`buildWorkspaceSkillsPrompt` + `compactSkillPaths`）、[`src/agents/skills/frontmatter.ts`](https://github.com/openclaw/openclaw/blob/v2026.3.13-1/src/agents/skills/frontmatter.ts)（SKILL.md 解析）
 
 ## 什么是 OpenClaw 方案？
 
@@ -10,7 +10,7 @@
 
 工作方式：
 
-1. 启动时将所有 Skill 以**紧凑 XML 格式**注入 system prompt（仅 name/description/location，不含完整指令）— 参考 OpenClaw [`formatSkillsForPrompt`](https://github.com/openclaw/openclaw/blob/main/src/agents/skills/workspace.ts)
+1. 启动时将所有 Skill 以**紧凑 XML 格式**注入 system prompt（仅 name/description/location，不含完整指令）— 参考 OpenClaw [`formatSkillsForPrompt`](https://github.com/openclaw/openclaw/blob/v2026.3.13-1/src/agents/skills/workspace.ts)
 2. 每轮对话，LLM **自主扫描** `<available_skills>` 列表，根据语义判断是否需要某个 Skill
 3. 若需要，LLM 调用 `read_file` 工具**按需读取** SKILL.md 的完整指令
 4. LLM 直接按 SKILL.md 的指令执行（无子 LLM 调用，无工具包装）
@@ -127,11 +127,11 @@ OPENAI_BASE_URL=http://localhost:11434/v1 OPENAI_MODEL=qwen2.5 npm run dev
 
 | 本项目 | 对应 OpenClaw 源码 | 说明 |
 |--------|-------------------|------|
-| [`src/prompt.ts`](https://github.com/myronzhangweb3/llm-skills-test/blob/main/src/prompt.ts) | [`src/agents/skills/workspace.ts` → `buildWorkspaceSkillsPrompt`](https://github.com/openclaw/openclaw/blob/main/src/agents/skills/workspace.ts) | XML 注入 system prompt，`compactSkillPaths` 压缩路径节省 token |
-| [`src/registry.ts`](https://github.com/myronzhangweb3/llm-skills-test/blob/main/src/registry.ts) | [`src/agents/skills/frontmatter.ts` → `parseFrontmatter`](https://github.com/openclaw/openclaw/blob/main/src/agents/skills/frontmatter.ts) | 解析 SKILL.md frontmatter 元数据 |
-| [`src/types.ts` → `SkillDefinition.filePath`](https://github.com/myronzhangweb3/llm-skills-test/blob/main/src/types.ts) | [`src/agents/skills/types.ts` → `SkillEntry`](https://github.com/openclaw/openclaw/blob/main/src/agents/skills/types.ts) | Skill 数据模型，`filePath` 是懒加载的关键 |
+| [`src/prompt.ts`](https://github.com/myronzhangweb3/llm-skills-test/blob/main/src/prompt.ts) | [`src/agents/skills/workspace.ts` → `buildWorkspaceSkillsPrompt`](https://github.com/openclaw/openclaw/blob/v2026.3.13-1/src/agents/skills/workspace.ts) | XML 注入 system prompt，`compactSkillPaths` 压缩路径节省 token |
+| [`src/registry.ts`](https://github.com/myronzhangweb3/llm-skills-test/blob/main/src/registry.ts) | [`src/agents/skills/frontmatter.ts` → `parseFrontmatter`](https://github.com/openclaw/openclaw/blob/v2026.3.13-1/src/agents/skills/frontmatter.ts) | 解析 SKILL.md frontmatter 元数据 |
+| [`src/types.ts` → `SkillDefinition.filePath`](https://github.com/myronzhangweb3/llm-skills-test/blob/main/src/types.ts) | [`src/agents/skills/types.ts` → `SkillEntry`](https://github.com/openclaw/openclaw/blob/v2026.3.13-1/src/agents/skills/types.ts) | Skill 数据模型，`filePath` 是懒加载的关键 |
 | [`src/tools.ts` → `read_file`](https://github.com/myronzhangweb3/llm-skills-test/blob/main/src/tools.ts) | OpenClaw 内置 `Read` 工具 | LLM 按需读取 SKILL.md 完整指令 |
-| [`skills/*/SKILL.md`](https://github.com/myronzhangweb3/llm-skills-test/blob/main/skills/greet/SKILL.md) | [`skills/**/SKILL.md`](https://github.com/openclaw/openclaw/tree/main/skills) | frontmatter 元数据 + Markdown 指令体 |
+| [`skills/*/SKILL.md`](https://github.com/myronzhangweb3/llm-skills-test/blob/main/skills/greet/SKILL.md) | [`skills/**/SKILL.md`](https://github.com/openclaw/openclaw/tree/v2026.3.13-1/skills) | frontmatter 元数据 + Markdown 指令体 |
 
 ## 练习
 
