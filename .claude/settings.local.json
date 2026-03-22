@@ -26,7 +26,10 @@
       "Bash(echo \"你好\" | OPENAI_API_KEY=hk-rzgh1a1000054580577c9c19d1578ee4761b63ff56371f41 OPENAI_BASE_URL=https://api.openai-hk.com/v1 OPENAI_MODEL=gpt-4o npx tsx src/index.ts 2>&1 | tail -60)",
       "WebFetch(domain:github.com)",
       "Bash(curl -s \"https://api.github.com/repos/openclaw/openclaw/git/trees/main?recursive=1\" | python3 -c \"import json,sys; data=json.load\\(sys.stdin\\); [print\\(f['path']\\) for f in data.get\\('tree',[]\\) if any\\(k in f['path'].lower\\(\\) for k in ['skill','prompt','format']\\)]\" 2>&1 | head -40)",
-      "Bash(curl -s \"https://api.github.com/repos/openclaw/openclaw/contents/src\" 2>&1 | python3 -c \"import json,sys; [print\\(f['name'], f['type']\\) for f in json.load\\(sys.stdin\\)]\" 2>&1)"
+      "Bash(curl -s \"https://api.github.com/repos/openclaw/openclaw/contents/src\" 2>&1 | python3 -c \"import json,sys; [print\\(f['name'], f['type']\\) for f in json.load\\(sys.stdin\\)]\" 2>&1)",
+      "Bash(curl -s \"https://raw.githubusercontent.com/openclaw/openclaw/main/src/skills.ts\" | grep -n \"formatSkills\\\\|buildWorkspace\\\\|available_skills\\\\|read_file\\\\|location\\\\|<skill\\\\|XML\\\\|compact\\\\|lazy\\\\|resolveSkills\" | head -40)",
+      "Bash(curl -s \"https://raw.githubusercontent.com/openclaw/openclaw/main/src/skills.ts\" | head -100)",
+      "Bash(curl -s \"https://api.github.com/repos/openclaw/openclaw\" | python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('private:', d.get\\('private'\\)\\); print\\('default_branch:', d.get\\('default_branch'\\)\\); print\\('message:', d.get\\('message',''\\)\\)\" 2>&1)"
     ]
   }
 }

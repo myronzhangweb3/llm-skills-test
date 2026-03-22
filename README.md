@@ -6,9 +6,7 @@
 
 **Skill = 注入 system prompt 的 XML 条目 + 按需懒加载的指令文件。**
 
-传统方案（如 OMC）依赖关键词匹配预选 Skill，然后将单个 Skill 的 prompt 注入到对话中。
-
-OpenClaw 方案完全不同：
+工作方式：
 
 1. 启动时将所有 Skill 以**紧凑 XML 格式**注入 system prompt（仅 name/description/location，不含完整指令）
 2. 每轮对话，LLM **自主扫描** `<available_skills>` 列表，根据语义判断是否需要某个 Skill
@@ -123,15 +121,12 @@ OPENAI_BASE_URL=http://localhost:11434/v1 OPENAI_MODEL=qwen2.5 npm run dev
 助手> 研究分析完成：摘要 + 深度分析 + 后续问题
 ```
 
-## 与传统方案对比
+## 特点小结
 
-| | 传统方案（OMC） | OpenClaw 方案（本项目）|
-|--|--|--|
-| Skill 路由 | 关键词匹配 | LLM 语义判断 |
-| Skill 加载 | 预先注入完整 prompt | 按需 read_file 懒加载 |
-| Skill 执行 | 子 LLM 调用 | LLM 直接执行指令 |
-| System prompt | 每轮动态拼接 | 启动时一次性构建 |
-| 新增 Skill | 需重启重新匹配 | 放入目录自动发现 |
+- **路由**：由 LLM 根据 `<available_skills>` 语义判断是否选用某个 Skill。
+- **加载**：需要时才用 `read_file` 读取对应 SKILL.md，不在启动时注入全文。
+- **执行**：同一轮对话内由 LLM 按 SKILL.md 直接执行，无单独的「子 Skill」API。
+- **System prompt**：启动时构建一次；新增 Skill 放入 `skills/` 后重启即可被发现。
 
 ## 练习
 
