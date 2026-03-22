@@ -81,6 +81,12 @@
       "type": "file"
     },
     {
+      "path": "README.md",
+      "accessCount": 12,
+      "lastAccessed": 1774174057686,
+      "type": "file"
+    },
+    {
       "path": "src/index.ts",
       "accessCount": 5,
       "lastAccessed": 1774170205020,
@@ -114,12 +120,6 @@
       "path": "skills/greet/SKILL.md",
       "accessCount": 4,
       "lastAccessed": 1774171043186,
-      "type": "file"
-    },
-    {
-      "path": "README.md",
-      "accessCount": 4,
-      "lastAccessed": 1774171842149,
       "type": "file"
     },
     {
