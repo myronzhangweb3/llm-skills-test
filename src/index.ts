@@ -84,8 +84,8 @@ async function main() {
     // 直接执行，无关键词触发步骤
     // LLM 在执行器内部自主决定是否激活技能
     try {
-      const response = await executor.execute(systemPrompt, input);
-      console.log(`\n助手> ${response}\n`);
+      await executor.execute(systemPrompt, input);
+      console.log(); // 额外换行
     } catch (err) {
       console.error(`  ❌ 执行错误：${err instanceof Error ? err.message : err}\n`);
     }

@@ -18,6 +18,7 @@ const MAX_TOOL_ROUNDS = 10;
 
 export interface Executor {
   execute: (systemPrompt: string, userMessage: string) => Promise<string>;
+  reset: () => void;
 }
 
 export interface LLMConfig {
@@ -47,31 +48,83 @@ function createRealExecutor(
   const model = config.model ?? "gpt-4o-mini";
   const apiTools = formatToolsForAPI(tools);
 
+  // 🔑 保持对话历史
+  let messages: OpenAI.ChatCompletionMessageParam[] = [];
+
   async function execute(systemPrompt: string, userMessage: string): Promise<string> {
-    const messages: OpenAI.ChatCompletionMessageParam[] = [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userMessage },
-    ];
+    // 首次调用时添加 system prompt
+    if (messages.length === 0) {
+      messages.push({ role: "system", content: systemPrompt });
+    }
+
+    // 添加用户消息
+    messages.push({ role: "user", content: userMessage });
 
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-      const requestBody = { model, max_tokens: 1024, messages, tools: apiTools };
-      console.log(`\n📤 [第 ${round} 轮] 请求体：\n`, JSON.stringify(requestBody, null, 2));
+      const requestBody = { model, max_tokens: 1024, messages, tools: apiTools, stream: true };
 
-      const response = await client.chat.completions.create(requestBody);
-      console.log(`\n📥 [第 ${round} 轮] 响应体：\n`, JSON.stringify(response, null, 2));
-
-      const assistantMessage = response.choices[0].message;
-      messages.push(assistantMessage);
-
-      if (!assistantMessage.tool_calls?.length) {
-        return assistantMessage.content ?? "[无响应内容]";
+      // 折叠显示请求体
+      const debugMode = process.env.DEBUG === "true";
+      if (debugMode) {
+        console.log(`\n📤 [第 ${round} 轮] 请求体：\n`, JSON.stringify(requestBody, null, 2));
+      } else {
+        console.log(`\n📤 [第 ${round} 轮] 请求 { model: "${model}", messages: ${messages.length}, tools: ${apiTools.length} }`);
       }
 
-      for (const toolCall of assistantMessage.tool_calls) {
+      const stream = await client.chat.completions.create(requestBody);
+
+      let fullContent = "";
+      let toolCalls: any[] = [];
+      let currentToolCall: any = null;
+
+      process.stdout.write("\n助手> ");
+
+      for await (const chunk of stream) {
+        const delta = chunk.choices[0]?.delta;
+
+        if (delta?.content) {
+          process.stdout.write(delta.content);
+          fullContent += delta.content;
+        }
+
+        if (delta?.tool_calls) {
+          for (const tc of delta.tool_calls) {
+            if (tc.index !== undefined) {
+              if (!toolCalls[tc.index]) {
+                toolCalls[tc.index] = {
+                  id: tc.id || "",
+                  type: "function",
+                  function: { name: "", arguments: "" },
+                };
+              }
+              currentToolCall = toolCalls[tc.index];
+            }
+
+            if (tc.id) currentToolCall.id = tc.id;
+            if (tc.function?.name) currentToolCall.function.name += tc.function.name;
+            if (tc.function?.arguments) currentToolCall.function.arguments += tc.function.arguments;
+          }
+        }
+      }
+
+      console.log(); // 换行
+
+      const assistantMessage: OpenAI.ChatCompletionMessage = {
+        role: "assistant",
+        content: fullContent || null,
+        tool_calls: toolCalls.length > 0 ? toolCalls : undefined,
+      };
+      messages.push(assistantMessage);
+
+      if (!toolCalls.length) {
+        return fullContent || "[无响应内容]";
+      }
+
+      for (const toolCall of toolCalls) {
         const fnName = toolCall.function.name;
         const fnArgs = JSON.parse(toolCall.function.arguments || "{}");
         const result = await handleToolCall(fnName, fnArgs, tools);
-        console.log(`  🔧 工具调用：${fnName}(${JSON.stringify(fnArgs)}) → ${result.slice(0, 100)}`);
+        console.log(`  🔧 ${fnName}(${JSON.stringify(fnArgs).slice(0, 50)}) → ${result.slice(0, 80)}...`);
 
         messages.push({
           role: "tool",
@@ -84,7 +137,11 @@ function createRealExecutor(
     return "[达到最大工具调用轮次]";
   }
 
-  return { execute };
+  function reset() {
+    messages = [];
+  }
+
+  return { execute, reset };
 }
 
 /** ─── Mock 模式（不需要 API Key）────────────────────────────────────────── */
@@ -107,6 +164,9 @@ function createMockExecutor(tools: ToolDefinition[]): Executor {
       }
 
       return `[Mock] 收到："${userMessage}"`;
+    },
+    reset() {
+      console.log("  🔄 [Mock] 重置对话历史");
     },
   };
 }
