@@ -11,10 +11,26 @@
  */
 
 import OpenAI from "openai";
+import { writeFileSync, appendFileSync, existsSync, mkdirSync } from "node:fs";
+import { join } from "node:path";
 import type { ToolDefinition } from "./types.js";
 import { formatToolsForAPI, handleToolCall } from "./tools.js";
 
 const MAX_TOOL_ROUNDS = 10;
+
+// 日志文件路径
+const LOG_DIR = join(process.cwd(), "logs");
+const LOG_FILE = join(LOG_DIR, `session-${Date.now()}.log`);
+
+// 初始化日志目录
+if (!existsSync(LOG_DIR)) {
+  mkdirSync(LOG_DIR, { recursive: true });
+}
+
+function log(message: string) {
+  const timestamp = new Date().toISOString();
+  appendFileSync(LOG_FILE, `[${timestamp}] ${message}\n`);
+}
 
 export interface Executor {
   execute: (systemPrompt: string, userMessage: string) => Promise<string>;
@@ -55,21 +71,17 @@ function createRealExecutor(
     // 首次调用时添加 system prompt
     if (messages.length === 0) {
       messages.push({ role: "system", content: systemPrompt });
+      log("Session started");
     }
 
     // 添加用户消息
     messages.push({ role: "user", content: userMessage });
+    log(`User: ${userMessage}`);
 
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
       const requestBody = { model, max_tokens: 1024, messages, tools: apiTools, stream: true };
-
-      // 折叠显示请求体
-      const debugMode = process.env.DEBUG === "true";
-      if (debugMode) {
-        console.log(`\n📤 [第 ${round} 轮] 请求体：\n`, JSON.stringify(requestBody, null, 2));
-      } else {
-        console.log(`\n📤 [第 ${round} 轮] 请求 { model: "${model}", messages: ${messages.length}, tools: ${apiTools.length} }`);
-      }
+      log(`\n[Round ${round}] Request: { model: "${model}", messages: ${messages.length}, tools: ${apiTools.length} }`);
+      log(JSON.stringify(requestBody, null, 2));
 
       const stream = await client.chat.completions.create(requestBody);
 
@@ -107,7 +119,8 @@ function createRealExecutor(
         }
       }
 
-      console.log(); // 换行
+      console.log();
+      log(`Assistant: ${fullContent}`);
 
       const assistantMessage: OpenAI.ChatCompletionMessage = {
         role: "assistant",
@@ -124,7 +137,9 @@ function createRealExecutor(
         const fnName = toolCall.function.name;
         const fnArgs = JSON.parse(toolCall.function.arguments || "{}");
         const result = await handleToolCall(fnName, fnArgs, tools);
-        console.log(`  🔧 ${fnName}(${JSON.stringify(fnArgs).slice(0, 50)}) → ${result.slice(0, 80)}...`);
+
+        log(`Tool call: ${fnName}(${JSON.stringify(fnArgs)})`);
+        log(`Tool result: ${result.slice(0, 200)}${result.length > 200 ? "..." : ""}`);
 
         messages.push({
           role: "tool",

@@ -66,6 +66,7 @@ async function main() {
   } else {
     console.log("🟡 Mock 模式（设置 OPENAI_API_KEY 和/或 OPENAI_BASE_URL 启用真实 API）");
   }
+  console.log(`📝 日志文件：logs/session-*.log`);
   console.log('输入消息开始对话，输入 "quit" 退出\n');
 
   // ─── REPL 主循环 ─────────────────────────────────────────
