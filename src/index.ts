@@ -29,13 +29,22 @@ import { createTools } from "./tools.js";
 import { createExecutor } from "./executor.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const SKILLS_DIR = join(__dirname, "..", "skills");
+const SKILLS_DIRS = [
+  join(__dirname, "..", "skills"),
+  join(__dirname, "..", "private-skills"),
+];
 
 async function main() {
   console.log("=== LLM Skill 系统（openclaw 方案）===\n");
 
   // ─── 阶段 1：Skill 发现 ───────────────────────────────────
-  const registry = discoverSkills(SKILLS_DIR);
+  const registry = new Map();
+  for (const dir of SKILLS_DIRS) {
+    const dirSkills = discoverSkills(dir);
+    for (const [name, skill] of dirSkills) {
+      registry.set(name, skill);
+    }
+  }
   console.log(listSkills(registry));
   console.log();
 
