@@ -9,6 +9,7 @@
  */
 
 import { readFileSync } from "node:fs";
+import { execSync } from "node:child_process";
 import type { ToolDefinition } from "./types.js";
 
 export function createTools(): ToolDefinition[] {
@@ -34,6 +35,23 @@ export function createTools(): ToolDefinition[] {
       description: "获取当前的日期和时间（ISO 格式）",
       input_schema: { type: "object", properties: {}, required: [] },
       handler: async () => new Date().toISOString(),
+    },
+    {
+      name: "exec_command",
+      description: "执行本机 shell 命令并返回输出结果",
+      input_schema: {
+        type: "object",
+        properties: { command: { type: "string", description: "要执行的 shell 命令" } },
+        required: ["command"],
+      },
+      handler: async (input) => {
+        try {
+          const output = execSync(input.command as string, { encoding: "utf-8", maxBuffer: 1024 * 1024 });
+          return output;
+        } catch (e: any) {
+          return `错误：命令执行失败\n${e.message}\n${e.stderr || ""}`;
+        }
+      },
     },
   ];
 }
